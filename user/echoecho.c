@@ -15,7 +15,6 @@ int main(void)
         }
 
         buffer[n] = '\0';
-        printf("echo: ");
         printf(buffer);
     }
 
