@@ -3,6 +3,10 @@
         "stat.h": "c",
         "typeinfo": "c",
         "fs.h": "c",
-        "user.h": "c"
-    }
+        "user.h": "c",
+        "types.h": "c"
+    },
+    "[c]": {
+        "editor.defaultFormatter": "ms-vscode.cpptools"
+    },
 }
