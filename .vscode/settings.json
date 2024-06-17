@@ -4,7 +4,8 @@
         "typeinfo": "c",
         "fs.h": "c",
         "user.h": "c",
-        "types.h": "c"
+        "types.h": "c",
+        "defs.h": "c"
     },
     "[c]": {
         "editor.defaultFormatter": "ms-vscode.cpptools"
