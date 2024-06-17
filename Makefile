@@ -121,6 +121,7 @@ UPROGS=\
 	$U/_echo\
 	$U/_echoecho\
 	$U/_prime\
+	$U/_pwd\
 	$U/_simple_shell\
 	$U/_pipe_test\
 	$U/_kmtk_test\
