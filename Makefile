@@ -123,6 +123,7 @@ UPROGS=\
 	$U/_prime\
 	$U/_pwd\
 	$U/_simple_shell\
+	$U/_simple_editor\
 	$U/_pipe_test\
 	$U/_kmtk_test\
 	$U/_hello_sfc\

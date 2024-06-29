@@ -3,8 +3,6 @@
 #include "user/user.h"
 #include "kernel/fs.h"
 
-#define BUF_SIZE 512
-
 void strncpy(char *dst, const char *src, int n)
 {
     int i;
@@ -66,7 +64,7 @@ void get_path(int fd, char *path)
 
 int main(int argc, char *argv[])
 {
-    char path[BUF_SIZE] = {0};
+    char path[512] = {0};
     int fd;
 
     fd = open(".", 0);
