@@ -5,7 +5,8 @@
         "fs.h": "c",
         "user.h": "c",
         "types.h": "c",
-        "defs.h": "c"
+        "defs.h": "c",
+        "syscall.h": "c"
     },
     "[c]": {
         "editor.defaultFormatter": "ms-vscode.cpptools"

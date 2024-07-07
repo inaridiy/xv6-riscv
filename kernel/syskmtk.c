@@ -38,14 +38,16 @@ int sys_setenv(void)
         return -1;
     }
 
-    for(int i = 0; i < p->env.size; i++) {
+    for (int i = 0; i < p->env.size; i++)
+    {
         printf("check key: %s\n", p->env.entries[i].key);
-        if(strncmp(p->env.entries[i].key, key, MAXENV) == 0) {
+        if (strncmp(p->env.entries[i].key, key, MAXENV) == 0)
+        {
             strncpy(p->env.entries[i].value, value, MAXENV);
             return 0;
         }
     }
- 
+
     p->env.entries[p->env.size].key = kalloc();
     p->env.entries[p->env.size].value = kalloc();
     strncpy(p->env.entries[p->env.size].key, key, sizeof(key));
@@ -59,24 +61,30 @@ uint64 sys_getenv(void)
 {
     char key[MAXENV];
     struct proc *p = myproc();
-    uint64 pointer;
 
-   
-    if (argstr(0, key, MAXENV) < 0 ) return -1;
-    argaddr(1, &pointer);
+    if (argstr(0, key, MAXENV) < 0)
+        return -1;
 
-    printf("key: %s\n", key);
-    printf("pointer: %d\n", pointer);
-
-    for(int i = 0; i < p->env.size; i++) {
-        if(strncmp(p->env.entries[i].key, key, MAXENV) == 0) {
-            printf("key: %s\n", p->env.entries[i].key);
-            printf("value: %s\n", p->env.entries[i].value);
-            if(copyout(p->pagetable, pointer, p->env.entries[i].value, strlen(p->env.entries[i].value)) < 0)
+    for (int i = 0; i < p->env.size; i++)
+    {
+        if (strncmp(p->env.entries[i].key, key, MAXENV) == 0)
+        {
+            int size = strlen(p->env.entries[i].value);
+            uint64 pointer = p->sz;
+            if (growproc(size) < 0)
                 return -1;
-            return 0;
+
+            if (copyout(p->pagetable, pointer, p->env.entries[i].value, size) < 0)
+            {
+                growproc(-size);
+                return -1;
+            }
+
+
+            return pointer;
         }
     }
 
-    return -1;
+    // key not found
+    return 0;
 }
