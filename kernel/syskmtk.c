@@ -55,19 +55,24 @@ int sys_setenv(void)
     return 0;
 }
 
-int sys_getenv(void)
+uint64 sys_getenv(void)
 {
-    char key[MAXENV], value[MAXENV];
+    char key[MAXENV];
     struct proc *p = myproc();
+    uint64 pointer;
 
-    if (argstr(0, key, MAXENV) < 0)
-    {
-        return -1;
-    }
+   
+    if (argstr(0, key, MAXENV) < 0 ) return -1;
+    argaddr(1, &pointer);
+
+    printf("key: %s\n", key);
+    printf("pointer: %d\n", pointer);
 
     for(int i = 0; i < p->env.size; i++) {
         if(strncmp(p->env.entries[i].key, key, MAXENV) == 0) {
-            if(copyout(p->pagetable, (uint64)value, p->env.entries[i].value, sizeof(value)) < 0)
+            printf("key: %s\n", p->env.entries[i].key);
+            printf("value: %s\n", p->env.entries[i].value);
+            if(copyout(p->pagetable, pointer, p->env.entries[i].value, strlen(p->env.entries[i].value)) < 0)
                 return -1;
             return 0;
         }

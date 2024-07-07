@@ -16,7 +16,7 @@ main(int argc, char *argv[])
   }
 
   // Get and print the environment variable
-  if (getenv("TESTVAR") == 0) {
+  if (getenv("TESTVAR", value) != 0) {
     fprintf(2, "getenv failed\n");
     exit(1);
   }
@@ -24,7 +24,7 @@ main(int argc, char *argv[])
   printf("TESTVAR=%s\n", value);
 
   // Try to get a non-existent variable
-  if (getenv("NONEXISTENT") != 0) {
+  if (getenv("NONEXISTENT", value) != 0) {
     fprintf(2, "getenv should have failed for non-existent variable\n");
     exit(1);
   }
