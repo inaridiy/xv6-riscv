@@ -146,6 +146,9 @@ found:
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
 
+  p->env.size = 0;
+  p->env.entries = 0;
+
   return p;
 }
 
@@ -160,6 +163,17 @@ freeproc(struct proc *p)
   p->trapframe = 0;
   if(p->pagetable)
     proc_freepagetable(p->pagetable, p->sz);
+
+  // clear the env entries
+  for(int i = 0; i < p->env.size; i++) {
+    kfree(p->env.entries[i].key);
+    kfree(p->env.entries[i].value);
+  }
+  if(p->env.entries)
+    kfree(p->env.entries);
+  p->env.entries = 0;
+  p->env.size = 0;
+
   p->pagetable = 0;
   p->sz = 0;
   p->pid = 0;
@@ -321,6 +335,27 @@ fork(void)
   acquire(&np->lock);
   np->state = RUNNABLE;
   release(&np->lock);
+
+  np->env.entries = kalloc();
+  if(np->env.entries == 0) {
+      acquire(&np->lock);
+      freeproc(np);
+      release(&np->lock);
+      return -1;
+  }
+  np->env.size = p->env.size;
+  for(i = 0; i < p->env.size; i++) {
+    np->env.entries[i].key = kalloc();
+    np->env.entries[i].value = kalloc();
+    if(np->env.entries[i].key == 0 || np->env.entries[i].value == 0) {
+      acquire(&np->lock);
+      freeproc(np);
+      release(&np->lock);
+      return -1;
+    }
+    safestrcpy(np->env.entries[i].key, p->env.entries[i].key, MAXENV);
+    safestrcpy(np->env.entries[i].value, p->env.entries[i].value, MAXENV);
+  }
 
   return pid;
 }
