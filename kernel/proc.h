@@ -92,6 +92,18 @@ enum procstate
   ZOMBIE
 };
 
+struct env_entry
+{
+  char *key;
+  char *value;
+};
+
+struct env
+{
+  struct env_entry *entries;
+  int size;
+};
+
 // Per-process state
 struct proc
 {
@@ -115,5 +127,6 @@ struct proc
   struct context context;      // swtch() here to run process
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
+  struct env env;              // Environment variables
   char name[16];               // Process name (debugging)
 };
