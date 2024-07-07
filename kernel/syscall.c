@@ -99,6 +99,8 @@ extern uint64 sys_mkdir(void);
 extern uint64 sys_close(void);
 extern uint64 sys_kmtk(void);
 extern uint64 sys_myfds(void);
+extern uint64 sys_getenv(void);
+extern uint64 sys_setenv(void);
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
@@ -126,6 +128,8 @@ static uint64 (*syscalls[])(void) = {
     [SYS_close] sys_close,
     [SYS_kmtk] sys_kmtk,
     [SYS_myfds] sys_myfds,
+    [SYS_getenv] sys_getenv,
+    [SYS_setenv] sys_setenv
 };
 
 void syscall(void)

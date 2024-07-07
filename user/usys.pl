@@ -38,3 +38,5 @@ entry("sleep");
 entry("uptime");
 entry("kmtk");
 entry("myfds");
+entry("getenv");
+entry("setenv");

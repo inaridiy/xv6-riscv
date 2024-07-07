@@ -22,3 +22,5 @@
 #define SYS_close 21
 #define SYS_kmtk 22
 #define SYS_myfds 23
+#define SYS_getenv 24
+#define SYS_setenv 25
