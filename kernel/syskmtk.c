@@ -34,21 +34,25 @@ int sys_setenv(void)
 
     if (argstr(0, key, MAXENV) < 0 || argstr(1, value, MAXENV) < 0)
     {
+        printf("argstr failed\n");
         return -1;
     }
 
     for(int i = 0; i < p->env.size; i++) {
+        printf("check key: %s\n", p->env.entries[i].key);
         if(strncmp(p->env.entries[i].key, key, MAXENV) == 0) {
             strncpy(p->env.entries[i].value, value, MAXENV);
             return 0;
         }
     }
-
+ 
+    p->env.entries[p->env.size].key = kalloc();
+    p->env.entries[p->env.size].value = kalloc();
     strncpy(p->env.entries[p->env.size].key, key, sizeof(key));
     strncpy(p->env.entries[p->env.size].value, value, sizeof(value));
     p->env.size++;
 
-    return -1;
+    return 0;
 }
 
 int sys_getenv(void)

@@ -7,6 +7,7 @@ int
 main(int argc, char *argv[])
 {
   char value[MAX_ENV_VALUE];
+  
 
   // Set an environment variable
   if (setenv("TESTVAR", "Hello, xv6!") < 0) {

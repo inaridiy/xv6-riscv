@@ -24,8 +24,8 @@ int sleep(int);
 int uptime(void);
 int kmtk(void);
 int myfds(void);
-int setenv(const char *key, const char *value);
-char* getenv(const char *key);
+int setenv(const char *, const char *);
+char* getenv(const char *);
 
 // ulib.c
 int stat(const char *, struct stat *);
