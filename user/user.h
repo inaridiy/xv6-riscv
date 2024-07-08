@@ -33,6 +33,7 @@ char *strcpy(char *, const char *);
 void *memmove(void *, const void *, int);
 char *strchr(const char *, char c);
 int strcmp(const char *, const char *);
+int strstartwith(const char *, const char *);
 void fprintf(int, const char *, ...);
 void printf(const char *, ...);
 char *gets(char *, int max);

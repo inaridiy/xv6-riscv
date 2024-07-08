@@ -33,6 +33,17 @@ strcmp(const char *p, const char *q)
   return (uchar)*p - (uchar)*q;
 }
 
+int
+strstartwith(const char *s, const char *t)
+{
+  while(*t) {
+    if(*s != *t)
+      return 0;
+    s++, t++;
+  }
+  return 1;
+}
+
 uint
 strlen(const char *s)
 {

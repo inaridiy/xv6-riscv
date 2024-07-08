@@ -54,6 +54,20 @@ void panic(char*);
 struct cmd *parsecmd(char*);
 void runcmd(struct cmd*) __attribute__((noreturn));
 
+void strncpy(char *dst, const char *src, int n)
+{
+    int i;
+    for (i = 0; i < n && src[i] != '\0'; i++)
+    {
+        dst[i] = src[i];
+    }
+    for (; i < n; i++)
+    {
+        dst[i] = '\0';
+    }
+}
+
+
 // Execute cmd.  Never returns.
 void
 runcmd(struct cmd *cmd)
@@ -158,13 +172,33 @@ main(void)
 
   // Read and run input commands.
   while(getcmd(buf, sizeof(buf)) >= 0){
+    printf("buf: %s\n", buf);
+
     if(buf[0] == 'c' && buf[1] == 'd' && buf[2] == ' '){
       // Chdir must be called by the parent, not the child.
       buf[strlen(buf)-1] = 0;  // chop \n
       if(chdir(buf+3) < 0)
         fprintf(2, "cannot cd %s\n", buf+3);
       continue;
+    } else if (strstartwith(buf, "export ")) {
+      char *env = buf + 7;
+      char *eq = strchr(env, '=');
+      if (eq == 0) {
+        fprintf(2, "invalid export command\n");
+        continue;
+      }
+
+      char key[128], value[128];
+
+      int key_len = eq - env;
+      int value_len = strlen(eq + 1);
+      strncpy(key, env, key_len);
+      strncpy(value, eq + 1, value_len);
+      setenv(key, value);
+
+      continue;
     }
+
     if(fork1() == 0)
       runcmd(parsecmd(buf));
     wait(0);
