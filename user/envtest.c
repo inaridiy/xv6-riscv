@@ -6,7 +6,11 @@
 int
 main(int argc, char *argv[])
 {
-  
+
+
+  printf("Running envtest\n");
+  printf("PATH=%s\n", getenv("PATH"));
+
 
   // Set an environment variable
   if (setenv("TESTVAR", "Hello, xv6!") < 0) {
@@ -14,8 +18,8 @@ main(int argc, char *argv[])
     exit(1);
   }
 
+    char* value;
 
-  char* value;
   // Get and print the environment variable
   if ((value = getenv("TESTVAR")) == 0) {
     fprintf(2, "getenv failed\n");
