@@ -3,19 +3,6 @@
 #include "user/user.h"
 #include "kernel/fs.h"
 
-void strncpy(char *dst, const char *src, int n)
-{
-    int i;
-    for (i = 0; i < n && src[i] != '\0'; i++)
-    {
-        dst[i] = src[i];
-    }
-    for (; i < n; i++)
-    {
-        dst[i] = '\0';
-    }
-}
-
 void get_path(int fd, char *path)
 {
     int fd_parent;

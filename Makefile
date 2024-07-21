@@ -144,7 +144,8 @@ UPROGS=\
 	$U/_wc\
 	$U/_zombie\
 
-COPY_FILES = $(wildcard $(F)/*)
+COPY_FILES = $(wildcard $(F)/*) \
+	$F/.shellrc
 
 fs.img: mkfs/mkfs README $(UPROGS) $(COPY_FILES)
 	@echo $(COPY_FILES)

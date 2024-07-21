@@ -13,6 +13,8 @@
 
 #define MAXARGS 10
 
+#define SHELLRC "usr/.shellrc"
+
 struct cmd
 {
   int type;
@@ -55,22 +57,71 @@ struct backcmd
   struct cmd *cmd;
 };
 
+void export(char *);
 int fork1(void); // Fork but panics on failure.
 void panic(char *);
+void interpret(char *);
 struct cmd *parsecmd(char *);
 void runcmd(struct cmd *) __attribute__((noreturn));
+void loadconfig();
 
-void strncpy(char *dst, const char *src, int n)
+void loadconfig()
 {
-  int i;
-  for (i = 0; i < n && src[i] != '\0'; i++)
+  int fd;
+
+  if ((fd = open(SHELLRC, 0)) < 0)
   {
-    dst[i] = src[i];
+    printf("sh: cannot read %s. but continue\n", "usr/.shellrc");
+    return;
   }
-  for (; i < n; i++)
+
+  // copy from grep.c
+  char buf[1024];
+  int n, m;
+  char *p, *q;
+
+  m = 0;
+  while ((n = read(fd, buf + m, sizeof(buf) - m - 1)) > 0)
   {
-    dst[i] = '\0';
+    m += n;
+    buf[m] = '\0';
+    p = buf;
+    while ((q = strchr(p, '\n')) != 0)
+    {
+      *q = 0;
+      interpret(p);
+      p = q + 1;
+    }
+    if (m > 0)
+    {
+      m -= p - buf;
+      memmove(buf, p, m);
+    }
   }
+
+  if (m > 0)
+  {
+    buf[m] = '\0';
+    interpret(buf);
+  }
+
+  close(fd);
+}
+
+void export(char *env)
+{
+  char *eq = strchr(env, '=');
+  if (eq == 0)
+  {
+    fprintf(2, "invalid export command\n");
+    return;
+  }
+
+  char key[1024], value[1024];
+
+  strncpy(key, env, eq - env);            // eq - env is the length of key
+  strncpy(value, eq + 1, strlen(eq + 1)); // eq + 1 is the start of value, strlen(eq + 1) is the length of value
+  setenv(key, value);
 }
 
 // Execute cmd.  Never returns.
@@ -97,9 +148,9 @@ void runcmd(struct cmd *cmd)
       exit(1);
     for (int i = 0; ecmd->argv[i]; i++)
     {
-      if(strstartwith(ecmd->argv[i], "$"))
+      if (strstartwith(ecmd->argv[i], "$"))
       {
-        char* value;
+        char *value;
         value = getenv(ecmd->argv[i] + 1);
         printf("value %s\n", value);
         ecmd->argv[i] = value;
@@ -174,6 +225,25 @@ int getcmd(char *buf, int nbuf)
   return 0;
 }
 
+void interpret(char *cmd)
+{
+  if (strstartwith(cmd, "cd "))
+  {
+    // Chdir must be called by the parent, not the child.
+    if (chdir(cmd + 3) < 0)
+      fprintf(2, "cannot cd %s\n", cmd + 3);
+    return;
+  }
+  else if (strstartwith(cmd, "export "))
+  {
+    export(cmd + 7);
+    return;
+  }
+  if (fork1() == 0)
+    runcmd(parsecmd(cmd));
+  wait(0);
+}
+
 int main(void)
 {
   static char buf[100];
@@ -189,41 +259,15 @@ int main(void)
     }
   }
 
+  loadconfig();
+  
   // Read and run input commands.
   while (getcmd(buf, sizeof(buf)) >= 0)
   {
-    if (buf[0] == 'c' && buf[1] == 'd' && buf[2] == ' ')
-    {
-      // Chdir must be called by the parent, not the child.
-      buf[strlen(buf) - 1] = 0; // chop \n
-      if (chdir(buf + 3) < 0)
-        fprintf(2, "cannot cd %s\n", buf + 3);
-      continue;
-    }
-    else if (strstartwith(buf, "export "))
-    {
-      char *env = buf + 7;
-      char *eq = strchr(env, '=');
-      if (eq == 0)
-      {
-        fprintf(2, "invalid export command\n");
-        continue;
-      }
-
-      char key[1024], value[1024];
-
-
-      strncpy(key, env, eq - env); // eq - env is the length of key
-      strncpy(value, eq + 1, strlen(eq + 1) - 1) ;// eq + 1 is the start of value, strlen(eq + 1) - 1 is the length of value
-      setenv(key, value);
-
-      continue;
-    }
-
-    if (fork1() == 0)
-      runcmd(parsecmd(buf));
-    wait(0);
+    buf[strlen(buf) - 1] = 0;
+    interpret(buf);
   }
+
   exit(0);
 }
 
@@ -377,7 +421,6 @@ struct cmd *parseline(char **, char *);
 struct cmd *parsepipe(char **, char *);
 struct cmd *parseexec(char **, char *);
 struct cmd *nulterminate(struct cmd *);
-char *expandenv(char *);
 
 struct cmd *
 parsecmd(char *s)
@@ -506,29 +549,6 @@ parseexec(char **ps, char *es)
   cmd->eargv[argc] = 0;
   return ret;
 }
-
-char *
-expandenv(char *s)
-{
-  if (s[0] != '$')
-    return s;
-
-  char *e = strchr(s, ' ');
-  if (e == 0)
-  {
-    char k[1024];
-    strcpy(k, s + 1);
-    if (k[strlen(s + 1) - 1] == '\n')
-      k[strlen(s + 1) - 1] = '\0'; // 　remove \n by power play.
-    printf("v len %d\n", strlen(getenv(k)));
-    return getenv(k);
-  }
-  else
-  {
-    return s;
-  }
-}
-
 // NUL-terminate all the counted strings.
 struct cmd *
 nulterminate(struct cmd *cmd)
