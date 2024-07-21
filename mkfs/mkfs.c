@@ -15,6 +15,8 @@
 #define static_assert(a, b) do { switch (0) case 0: case (a): ; } while (0)
 #endif
 
+#define BININO  2    // bin i-number
+#define USRINO  3    // usr i-number
 #define NINODES 200
 
 // Disk layout:
@@ -69,7 +71,7 @@ int
 main(int argc, char *argv[])
 {
   int i, cc, fd;
-  uint rootino, binino, inum, off;
+  uint rootino, binino, usrino, inum, off;
   struct dirent de;
   char buf[BSIZE];
   struct dinode din;
@@ -120,6 +122,10 @@ main(int argc, char *argv[])
   binino = ialloc(T_DIR);
   assert(binino == BININO);
 
+  usrino = ialloc(T_DIR);
+  assert(usrino == USRINO);
+
+  // init root directory
   bzero(&de, sizeof(de));
   de.inum = xshort(rootino);
   strcpy(de.name, ".");
@@ -130,6 +136,7 @@ main(int argc, char *argv[])
   strcpy(de.name, "..");
   iappend(rootino, &de, sizeof(de));
 
+  // init bin directory
   bzero(&de, sizeof(de));
   de.inum = xshort(binino);
   strcpy(de.name, "bin");
@@ -144,6 +151,23 @@ main(int argc, char *argv[])
   de.inum = xshort(rootino);
   strcpy(de.name, "..");
   iappend(binino, &de, sizeof(de));
+
+  // init usr directory
+  bzero(&de, sizeof(de));
+  de.inum = xshort(usrino);
+  strcpy(de.name, "usr");
+  iappend(rootino, &de, sizeof(de));
+
+  bzero(&de, sizeof(de));
+  de.inum = xshort(usrino);
+  strcpy(de.name, ".");
+  iappend(binino, &de, sizeof(de));
+
+  bzero(&de, sizeof(de));
+  de.inum = xshort(usrino);
+  strcpy(de.name, "..");
+  iappend(binino, &de, sizeof(de));
+
 
   for(i = 2; i < argc; i++){
     if(strncmp(argv[i], "user/", 5) == 0) {
@@ -171,7 +195,7 @@ main(int argc, char *argv[])
       bzero(&de, sizeof(de));
       de.inum = xshort(inum);
       strncpy(de.name, shortname, DIRSIZ);
-      iappend(rootino, &de, sizeof(de));
+      iappend(usrino, &de, sizeof(de));
     }
 
     if((fd = open(argv[i], 0)) < 0){
