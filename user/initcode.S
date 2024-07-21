@@ -17,7 +17,7 @@ exit:
         ecall
         jal exit
 
-# char init[] = "/init\0";
+# char init[] = "bin/init\0";
 init:
   .string "bin/init\0"
 
