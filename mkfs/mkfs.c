@@ -69,7 +69,7 @@ int
 main(int argc, char *argv[])
 {
   int i, cc, fd;
-  uint rootino, inum, off;
+  uint rootino, binino, inum, off;
   struct dirent de;
   char buf[BSIZE];
   struct dinode din;
@@ -117,6 +117,9 @@ main(int argc, char *argv[])
   rootino = ialloc(T_DIR);
   assert(rootino == ROOTINO);
 
+  binino = ialloc(T_DIR);
+  assert(binino == BININO);
+
   bzero(&de, sizeof(de));
   de.inum = xshort(rootino);
   strcpy(de.name, ".");
@@ -127,47 +130,72 @@ main(int argc, char *argv[])
   strcpy(de.name, "..");
   iappend(rootino, &de, sizeof(de));
 
+  bzero(&de, sizeof(de));
+  de.inum = xshort(binino);
+  strcpy(de.name, "bin");
+  iappend(rootino, &de, sizeof(de));
+
+  bzero(&de, sizeof(de));
+  de.inum = xshort(binino);
+  strcpy(de.name, ".");
+  iappend(binino, &de, sizeof(de));
+
+  bzero(&de, sizeof(de));
+  de.inum = xshort(rootino);
+  strcpy(de.name, "..");
+  iappend(binino, &de, sizeof(de));
+
   for(i = 2; i < argc; i++){
-    // get rid of "user/"
-    char *shortname;
-    if(strncmp(argv[i], "user/", 5) == 0)
-      shortname = argv[i] + 5;
-    else if(strncmp(argv[i], "fs/", 3) == 0)
-      shortname = argv[i] + 3;
-    else
-      shortname = argv[i];
+    if(strncmp(argv[i], "user/", 5) == 0) {
+      // User programs go to /bin
+      char *shortname = argv[i] + 5;  // skip "user/"
+      assert(index(shortname, '/') == 0);
+      if(shortname[0] == '_')
+        shortname += 1;
+      inum = ialloc(T_FILE);
+      bzero(&de, sizeof(de));
+      de.inum = xshort(inum);
+      strncpy(de.name, shortname, DIRSIZ);
+      iappend(binino, &de, sizeof(de));
+    } else {
+      // Other files go to root directory
+      char *shortname;
+      if (strncmp(argv[i], "fs/", 3) == 0) {
+        shortname = argv[i] + 3;  // skip "fs/"
+      } else {
+        shortname = argv[i];
+      }
 
-    assert(index(shortname, '/') == 0);
+      assert(index(shortname, '/') == 0);
+      inum = ialloc(T_FILE);
+      bzero(&de, sizeof(de));
+      de.inum = xshort(inum);
+      strncpy(de.name, shortname, DIRSIZ);
+      iappend(rootino, &de, sizeof(de));
+    }
 
-    if((fd = open(argv[i], 0)) < 0)
-      die(argv[i]);
-
-    // Skip leading _ in name when writing to file system.
-    // The binaries are named _rm, _cat, etc. to keep the
-    // build operating system from trying to execute them
-    // in place of system binaries like rm and cat.
-    if(shortname[0] == '_')
-      shortname += 1;
-
-    inum = ialloc(T_FILE);
-
-    bzero(&de, sizeof(de));
-    de.inum = xshort(inum);
-    strncpy(de.name, shortname, DIRSIZ);
-    iappend(rootino, &de, sizeof(de));
-
+    if((fd = open(argv[i], 0)) < 0){
+      perror(argv[i]);
+      exit(1);
+    }
     while((cc = read(fd, buf, sizeof(buf))) > 0)
       iappend(inum, buf, cc);
-
     close(fd);
   }
 
-  // fix size of root inode dir
+  // Fix size of root inode dir
   rinode(rootino, &din);
   off = xint(din.size);
   off = ((off/BSIZE) + 1) * BSIZE;
   din.size = xint(off);
   winode(rootino, &din);
+
+  // Fix size of bin inode dir
+  rinode(binino, &din);
+  off = xint(din.size);
+  off = ((off/BSIZE) + 1) * BSIZE;
+  din.size = xint(off);
+  winode(binino, &din);
 
   balloc(freeblock);
 

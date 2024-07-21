@@ -3,6 +3,7 @@
 
 
 #define ROOTINO  1   // root i-number
+#define BININO  2    // bin i-number
 #define BSIZE 1024  // block size
 
 // Disk layout:
