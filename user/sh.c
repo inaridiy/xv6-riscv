@@ -99,7 +99,10 @@ void runcmd(struct cmd *cmd)
     {
       if(strstartwith(ecmd->argv[i], "$"))
       {
-        ecmd->argv[i] = getenv(ecmd->argv[i] + 1);
+        char* value;
+        value = getenv(ecmd->argv[i] + 1);
+        printf("value %s\n", value);
+        ecmd->argv[i] = value;
       }
     }
 
@@ -209,10 +212,9 @@ int main(void)
 
       char key[1024], value[1024];
 
-      int key_len = eq - env;
-      int value_len = strlen(eq + 1);
-      strncpy(key, env, key_len);
-      strncpy(value, eq + 1, value_len);
+
+      strncpy(key, env, eq - env); // eq - env is the length of key
+      strncpy(value, eq + 1, strlen(eq + 1) - 1) ;// eq + 1 is the start of value, strlen(eq + 1) - 1 is the length of value
       setenv(key, value);
 
       continue;
