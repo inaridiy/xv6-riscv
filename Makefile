@@ -1,5 +1,6 @@
 K=kernel
 U=user
+F=fs
 
 OBJS = \
   $K/entry.o \
@@ -143,8 +144,11 @@ UPROGS=\
 	$U/_wc\
 	$U/_zombie\
 
-fs.img: mkfs/mkfs README $(UPROGS)
-	mkfs/mkfs fs.img README $(UPROGS)
+COPY_FILES = $(wildcard $(F)/*)
+
+fs.img: mkfs/mkfs README $(UPROGS) $(COPY_FILES)
+	@echo $(COPY_FILES)
+	mkfs/mkfs fs.img README $(UPROGS) $(COPY_FILES)
 
 -include kernel/*.d user/*.d
 
