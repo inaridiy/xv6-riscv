@@ -1,8 +1,10 @@
 // Shell.
 
 #include "kernel/types.h"
+#include "kernel/stat.h"
 #include "user/user.h"
 #include "kernel/fcntl.h"
+#include "kernel/fs.h"
 
 // Parsed command representation
 #define EXEC 1
@@ -61,9 +63,9 @@ void export(char *);
 int fork1(void); // Fork but panics on failure.
 void panic(char *);
 void interpret(char *);
+char *resolvepath(char *);
 struct cmd *parsecmd(char *);
 void runcmd(struct cmd *) __attribute__((noreturn));
-void loadconfig();
 
 void loadconfig()
 {
@@ -71,7 +73,7 @@ void loadconfig()
 
   if ((fd = open(SHELLRC, 0)) < 0)
   {
-    printf("sh: cannot read %s. but continue\n", "usr/.shellrc");
+    printf("sh: cannot read %s. but continue\n", "usr/.shellrc"); 
     return;
   }
 
@@ -152,12 +154,12 @@ void runcmd(struct cmd *cmd)
       {
         char *value;
         value = getenv(ecmd->argv[i] + 1);
-        printf("value %s\n", value);
         ecmd->argv[i] = value;
       }
     }
 
-    exec(ecmd->argv[0], ecmd->argv);
+    char *fullpath = resolvepath(ecmd->argv[0]);
+    exec(fullpath, ecmd->argv);
     fprintf(2, "exec %s failed\n", ecmd->argv[0]);
     break;
 
@@ -260,7 +262,7 @@ int main(void)
   }
 
   loadconfig();
-  
+
   // Read and run input commands.
   while (getcmd(buf, sizeof(buf)) >= 0)
   {
@@ -594,5 +596,82 @@ nulterminate(struct cmd *cmd)
     nulterminate(bcmd->cmd);
     break;
   }
+  return cmd;
+}
+
+
+char *checkexisted(char *path)
+{
+  struct stat st;
+  if (stat(path, &st) < 0)
+  {
+    return 0;
+  }
+  return path;
+}
+
+char *findpath(char *path, char *cmd)
+{
+  int fd;
+  struct dirent de;
+  char buf[512], *p;
+
+  if((fd = open(path, 0)) < 0){
+    fprintf(2, "sh: cannot open to resolve %s\n", path);
+    exit(1);
+  }
+
+  strcpy(buf, path);
+  p = buf + strlen(buf);
+  *p++ = '/';
+  while(read(fd, &de, sizeof(de)) == sizeof(de)){
+    if(de.inum == 0)
+        continue;
+    memmove(p, de.name, DIRSIZ);
+    p[DIRSIZ] = 0;
+    if (strendwith(buf, cmd))
+    {
+      close(fd);
+      char *fullpath = malloc(strlen(buf) + 1);
+      strcpy(fullpath, buf);
+      return fullpath;
+    }
+  }
+
+  close(fd);
+  return 0;
+}
+
+char *resolvepath(char *cmd)
+{
+  char* path = getenv("PATH");
+
+  if (path == 0)
+  {
+    return cmd;
+  }
+
+  if(checkexisted(cmd) != 0)
+  {
+    return cmd;
+  }
+
+  char *p = path, *q;
+  while ((q = strchr(p, ':')) != 0){
+    *q = 0;
+    char *fullpath = findpath(p, cmd);
+    if (fullpath != 0)
+    {
+      return fullpath;
+    }
+    p = q + 1;
+  }
+
+  char *fullpath = findpath(p, cmd);
+  if (fullpath != 0)
+  {
+    return fullpath;
+  }
+
   return cmd;
 }

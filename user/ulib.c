@@ -44,6 +44,17 @@ strstartwith(const char *s, const char *t)
   return 1;
 }
 
+int
+strendwith(const char *s, const char *t)
+{
+  int slen = strlen(s);
+  int tlen = strlen(t);
+  if (slen < tlen) {
+    return 0;
+  }
+  return strcmp(s + slen - tlen, t) == 0;
+}
+
 void 
 strncpy(char *dst, const char *src, int n)
 {
