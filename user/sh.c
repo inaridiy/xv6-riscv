@@ -120,9 +120,12 @@ void export(char *env)
   }
 
   char key[1024], value[1024];
-
-  strncpy(key, env, eq - env);            // eq - env is the length of key
-  strncpy(value, eq + 1, strlen(eq + 1)); // eq + 1 is the start of value, strlen(eq + 1) is the length of value
+  int keylen = eq - env;
+  int valuelen = strlen(eq + 1);
+  strncpy(key, env, keylen);            // eq - env is the length of key
+  strncpy(value, eq + 1, valuelen); // eq + 1 is the start of value, strlen(eq + 1) is the length of value
+  key[keylen] = '\0';
+  value[valuelen] = '\0';
   setenv(key, value);
 }
 
@@ -152,11 +155,12 @@ void runcmd(struct cmd *cmd)
     {
       if (strstartwith(ecmd->argv[i], "$"))
       {
-        char *value;
-        value = getenv(ecmd->argv[i] + 1);
-        ecmd->argv[i] = value;
+        char *value = getenv(ecmd->argv[i] + 1);
+        char *value2 = malloc(strlen(value) + 1);
+        ecmd->argv[i] = value2;
       }
     }
+
 
     char *fullpath = resolvepath(ecmd->argv[0]);
     exec(fullpath, ecmd->argv);
@@ -614,7 +618,7 @@ char *findpath(char *path, char *cmd)
 {
   int fd;
   struct dirent de;
-  char buf[512], *p;
+  char buf[1024], *p;
 
   if((fd = open(path, 0)) < 0){
     fprintf(2, "sh: cannot open to resolve %s\n", path);
